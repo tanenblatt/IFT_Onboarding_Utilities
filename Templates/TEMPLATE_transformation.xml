@@ -1,0 +1,105 @@
+{% macro create_block(context) %}
+    <extension>
+      <TransformationEvent>
+        <eventTime>{{ context.EventTime }}</eventTime> 
+        <eventTimeZoneOffset>{{ context.TimeZone }}</eventTimeZoneOffset> 
+        <baseExtension> 
+          <eventID>{{ context.EventID }}</eventID> 
+        </baseExtension>
+        <transformationID>{% if context.TransformationID %}{{ context.TransformationID }}{% endif %}</transformationID>
+        {% if not context.QuantifiedFromItems %}
+        <inputEPCList>
+          {% for item in context.UnquantifiedFromItems %}
+          <epc>{{ item.FromMaterial }}</epc>
+          {% endfor %}
+        </inputEPCList>
+        {% else %}
+        <inputQuantityList>
+          {% for item in context.QuantifiedFromItems %}
+            <quantityElement>
+              <epcClass>{{ item.FromMaterial }}</epcClass> 
+              <quantity>{{ item.FromQuantity }}</quantity>
+              <uom>{{ item.FromQuantityUOM }}</uom>
+            </quantityElement>
+          {% endfor %}
+        </inputQuantityList>
+        {% endif %}
+        {% if not context.QuantifiedToItems %}
+        <outputEPCList>
+          {% for item in context.UnquantifiedFromItems %}
+          <epc>{{ item.ToMaterial }}</epc>
+          {% endfor %}
+        </outputEPCList>
+        {% else %}
+        <outputQuantityList>
+          {% for item in context.QuantifiedToItems %}
+            <quantityElement>
+              <epcClass>{{ item.ToMaterial }}</epcClass> 
+              <quantity>{{ item.ToQuantity }}</quantity>
+              <uom>{{ item.ToQuantityUOM }}</uom>
+            </quantityElement>
+          {% endfor %}
+        </outputQuantityList>
+        {% endif %}
+        {% if context.BizStep %}
+        <bizStep>{{ context.BizStep }}</bizStep> 
+        {% endif %}
+        {% if context.Disposition %}
+        <disposition>{{ context.Disposition }}</disposition>
+        {% endif %}
+        {% if context.ReadPoint %}
+        <readPoint><id>{{ context.ReadPoint }}</id></readPoint>
+        {% endif %}
+        <bizLocation><id>{{ context.Location }}</id></bizLocation>
+        {% if context.BizTransaction %}
+        <bizTransactionList>
+          <bizTransaction type="urn:epcglobal:cbv:btt:desadv">{{ context.BizTransaction }}</bizTransaction>
+	      </bizTransactionList>
+        {% endif %}
+        {% if context.FromLocation or context.ToLocation or context.ExpirationDate or context.SellByDate or context.BestBeforeDate %}
+        <extension>
+          {% if context.FromLocation %}
+          <sourceList>
+	          {% for location in context.FromLocation %}
+	          <source type="urn:epcglobal:cbv:sdt:owning_party">{{ location }}</source>
+            {% endfor %}
+	        </sourceList>
+	        {% endif %}
+	        {% if context.ToLocation %}
+	        <destinationList>
+	          {% for location in context.ToLocation %}
+	          <destination type="urn:epcglobal:cbv:sdt:owning_party">{{ location }}</destination>
+            {% endfor %}
+          </destinationList>
+          {% endif %}
+          {% if context.ExpirationDate or context.SellByDate or context.BestBeforeDate %}
+          <ilmd>
+            {% if context.ExpirationDate %}
+            <cbvmda:itemExpirationDate>{{ context.ExpirationDate }}</cbvmda:itemExpirationDate>
+            {% endif %}            
+            {% if context.SellByDate %}
+            <cbvmda:sellByDate>{{ context.SellByDate }}</cbvmda:sellByDate>
+            {% endif %}            
+            {% if context.BestBeforeDate %}
+            <cbvmda:bestBeforeDate>{{ context.BestBeforeDate }}</cbvmda:bestBeforeDate>
+            {% endif %}            
+          </ilmd>
+          {% endif %}            
+        </extension>
+        {% endif %}            
+      </TransformationEvent>
+    </extension>
+{% endmacro %}<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epcis:EPCISDocument 
+  xmlns:epcis="urn:epcglobal:epcis:xsd:1" 
+  xmlns:cbvmda="urn:epcglobal:cbv:mda" 
+  xmlns:example="http://ns.example.com/epcis" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" creationDate="2005-07-11T11:30:47.0Z" schemaVersion="1.2">
+  <EPCISBody>
+    <EventList>
+    {% for context in contexts %}
+      {{ create_block(context) }}
+    {% endfor %}
+    </EventList>
+  </EPCISBody>
+</epcis:EPCISDocument>

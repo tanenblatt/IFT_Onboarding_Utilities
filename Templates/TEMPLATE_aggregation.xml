@@ -1,0 +1,76 @@
+{% macro create_block(context) %}
+      <AggregationEvent>
+        <eventTime>{{ context.EventTime }}</eventTime> 
+        <eventTimeZoneOffset>{{ context.TimeZone }}</eventTimeZoneOffset> 
+        <baseExtension> 
+          <eventID>{{ context.EventID }}</eventID> 
+        </baseExtension> 
+        <parentID>{{ context.SSCC }}</parentID>
+        <childEPCs>
+        {% if context.UnquantifiedItems %}
+          {% for item in context.UnquantifiedItems %}
+          <epc>{{ item.Material }}</epc>
+          {% endfor %}
+        {% endif %}
+        </childEPCs>
+        <action>ADD</action>
+        {% if context.BizStep %}
+        <bizStep>{{ context.BizStep }}</bizStep> 
+        {% endif %}
+        {% if context.Disposition %}
+        <disposition>{{ context.Disposition }}</disposition>
+        {% endif %}
+        {% if context.ReadPoint %}
+        <readPoint><id>{{ context.ReadPoint }}</id></readPoint>
+        {% endif %}
+        <bizLocation><id>{{ context.Location }}</id></bizLocation>
+        <bizTransactionList>
+          {% if context.PurchaseOrder %}
+          <bizTransaction type="urn:epcglobal:cbv:btt:po">{{ context.PurchaseOrder }}</bizTransaction>
+          {% endif %}
+          {% if context.DespatchAdvice %}
+          <bizTransaction type="urn:epcglobal:cbv:btt:desadv">{{ context.DespatchAdvice }}</bizTransaction>
+          {% endif %}
+          {% if context.ProductionOrder %}
+          <bizTransaction type="urn:epcglobal:cbv:btt:prodorder">{{ context.ProductionOrder }}</bizTransaction>
+          {% endif %}
+        </bizTransactionList>
+        {% if context.QuantifiedItems or context.FromLocation or context.ToLocation %}
+        <extension>
+          {% if context.QuantifiedItems %}
+          <childQuantityList>
+            {% for item in context.QuantifiedItems %}
+            <quantityElement>
+              <epcClass>{{ item.Material }}</epcClass> 
+              <quantity>{{ item.Quantity }}</quantity>
+              <uom>{{ item.QuantityUOM }}</uom>
+            </quantityElement>
+            {% endfor %}
+          </childQuantityList>
+          {% endif %}
+          {% if context.FromLocation %}
+          <sourceList>
+	          <source type="urn:epcglobal:cbv:sdt:owning_party">{{ context.FromLocation }}</source>
+	        </sourceList>
+          {% endif %}
+          {% if context.ToLocation %}
+	        <destinationList>
+	          <destination type="urn:epcglobal:cbv:sdt:owning_party">{{ context.ToLocation }}</destination>
+          </destinationList>
+          {% endif %}
+        </extension>
+        {% endif %}
+      </AggregationEvent>
+{% endmacro %}<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epcis:EPCISDocument 
+  xmlns:epcis="urn:epcglobal:epcis:xsd:1" 
+  xmlns:example="http://ns.example.com/epcis" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" creationDate="2005-07-11T11:30:47.0Z" schemaVersion="1.2">
+  <EPCISBody>
+    <EventList>
+    {% for context in contexts %}
+      {{ create_block(context) }}
+    {% endfor %}
+    </EventList>
+  </EPCISBody>
+</epcis:EPCISDocument>
